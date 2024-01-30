@@ -212,19 +212,18 @@ if selected == "Home":
         st.header("Recap Rent")
         st.subheader("Rent by Season")
         df_season = hr(df_all)
-        df_season["season"] = df_season["season"].apply(season_change)
         df_season["day"] = df_season["day"].apply(working_day)
         df_season["weathersit"] = df_season["weathersit"].apply(weath)
 
         season_select = st.selectbox(
             label="Select Season",
-            options=('Springer', 'Summer', 'Fall','Winter'),
+            options=('springer', 'summer', 'fall','winter'),
             # index=None,
             # placeholder="Select Season...",
             )
         
         df_season = df_season[df_season["season"]== str(season_select)]
-
+    
         with st.container(border=True):
             colors = ["#72BCD4", "#D3D3D3"] 
 
@@ -366,7 +365,6 @@ elif selected =="Report":
     df_report_nwork= hr_m(df_all[df_all["workingday_x"]==0])
 
     df_report = hr(df_all)
-    df_report["season"] = df_report["season"].apply(season_change)
     df_report["day"] = df_report["day"].apply(working_day)
     df_report["weathersit"] = df_report["weathersit"].apply(weath)
 
@@ -447,6 +445,16 @@ elif selected =="Report":
             )
 
     st.header("Rent by Season")
+    def season_change_2(x):
+        if x=="spinger":
+            return "Springer"
+        elif x=="summer":
+            return "Summer"
+        elif x=="fall":
+            return "Fall"
+        else:
+            return "Winter"
+    df_report["season"] = df_report["season"].apply(season_change_2)
     with st.container(border=True):
         fig, ax = plt.subplots(ncols=2, figsize=(45, 10))
         colors = ["#D3D3D3","#72BCD4"] 
