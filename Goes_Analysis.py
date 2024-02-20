@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 from streamlit_option_menu import option_menu
+from tensorflow.keras.models import load_model
 
 df_all = pd.read_csv("data_all.csv")
 
@@ -82,12 +83,23 @@ def season_change(x):
         return "Fall"
     else:
         return "Winter"
+
+def season_change_input(x):
+    if x=="Springer":
+        return 1
+    elif x=="Summer":
+        return 2
+    elif x=="Fall":
+         return 3
+    else:
+        return 4
     
 def working_day(x):
     if x==0:
         return "weekend"
     else:
         return "weekday"
+
 
 def weath(x):
     if x==1:
@@ -98,6 +110,16 @@ def weath(x):
         return "Light Snow or Light Rain"
     else:
         return "Heavy Rain with thunderstrom or Mist with Snow"
+
+def weath_input(x):
+    if x=="Sunny":
+        return 1
+    elif x=="Mist and Cloudy":
+        return 2
+    elif x=="Light Snow or Light Rain":
+        return 3
+    elif x=="Heavy Rain with thunderstrom or Mist with Snow":
+        return 4
 
 
 
@@ -110,7 +132,7 @@ with st.sidebar:
     st.image("https://png.pngtree.com/png-vector/20191028/ourlarge/pngtree-logo-mountain-bike-cycling-mtb-isolated-vector-silhouette-downhill-cyclist-png-image_1908266.jpg")
     selected = option_menu(
         menu_title="Main Menu",
-        options=["Home", "Report"]
+        options=["Home", "Report","Model Prediction"]
     )
 
 
@@ -492,4 +514,56 @@ elif selected =="Report":
             """
             )
 
+elif selected =="Model Prediction":
+    st.title(selected)
+    filepath = './saved_model'
+    model = load_model(filepath, compile=True)
+    st.header("Input Features")
 
+    upload_file = st.file_uploader("Upload file CSV",type=["csv"])
+    with st.expander("See explanation"):
+            st.write('''The data must contain features in the form of season, year, holiday, 
+                     working day, weather site, temperature, humidity and wind speed which have been converted into numeric
+                     ''')
+    if upload_file is not None:
+        features = pd.read_csv(upload_file)
+
+    else:
+        data_season = st.selectbox("Season",("Springer","Summer","Fall","Winter"))
+        data_year = st.number_input(label="year",min_value=2011,step=1, 
+                                    value=2011, placeholder="Input Year...")
+        with st.expander("See explanation"):
+                st.write("Data for the year starts from 2011,because the data processed is data from that year")
+
+        data_holiday = st.radio("Holiday",(1,0),horizontal=True)
+        data_working = st.radio("Working day",(1,0), horizontal=True)
+        with st.expander("See explanation"):
+                st.write("Holiday and working day data are true or false")
+                st.write("1 : Yes, 0 : No")
+
+        data_weathersit = st.selectbox("Weathersit",("Sunny","Mist and Cloudy","Light Snow or Light Rain",
+                                                    "Heavy Rain with thunderstrom or Mist with Snow"))
+        data_temp = st.slider("Temperature(°C)",0.05, 30.0, 0.03, step=0.01)
+        data_hum = st.slider("Humidity(%)",0.0, 50.0, 0.81, step=0.01)
+        data_wind = st.slider("Windspeed(mph)",0.02, 50.0, 0.16, step=0.01)
+        data = {
+            'season' : data_season,
+            'year' : data_year,
+            'holiday' : data_holiday,
+            'working' : data_working,
+            'weath' : data_weathersit,
+            'temp' : data_temp,
+            'hum' : data_hum,
+            'wind' : data_wind
+        }
+        features = pd.DataFrame(data, index=[0])
+        st.subheader("Data Input")
+        st.write(features)
+
+        features["season"] = features["season"].apply(season_change_input)
+        features["year"] = features["year"].apply(lambda x:x-2011)
+        features["weath"] = features["weath"].apply(weath_input)
+    st.subheader("Result Prediction")
+    pred = model.predict(features)
+    pred = pd.DataFrame(pred, columns=['Result'])
+    st.write(pred)
